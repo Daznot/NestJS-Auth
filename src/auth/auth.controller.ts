@@ -44,12 +44,15 @@ export class AuthController {
     }
 
     @Get('refresh-tokens')
-    refreshTokens(@Cookie(REFRESH_TOKEN) refreshToken: string, @Res() res: Response) {
-        if (refreshToken) {
-            throw new UnauthorizedException()
+    async refreshTokens(@Cookie(REFRESH_TOKEN) refreshToken: string, @Res() res: Response) {
+        if (!refreshToken) {
+            throw new UnauthorizedException();
         }
-
-		const tokens = await this.authService.refreshTokens(refreshToken);
+        const tokens = await this.authService.refreshTokens(refreshToken);
+        if (!tokens) {
+            throw new UnauthorizedException();
+        }
+        this.setRefreshTokenToCookies(tokens, res);
     }
 
     private setRefreshTokenToCookies(tokens: Tokens, res: Response) {

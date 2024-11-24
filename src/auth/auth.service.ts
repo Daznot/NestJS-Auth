@@ -23,6 +23,8 @@ export class AuthService {
         if (!token) {
             throw new UnauthorizedException();
         }
+        const user = await this.userService.findOne(token.userId);
+        return this.generateTokens(user);
     }
 
     async register(dto: RegisterDTO) {
@@ -49,6 +51,10 @@ export class AuthService {
             throw new UnauthorizedException('Неверный логин или пароль');
         }
 
+        return this.generateTokens(user);
+    }
+
+    private async generateTokens(user: User): Promise<Tokens> {
         const accessToken =
             'Bearer ' +
             this.jwtService.sign({
