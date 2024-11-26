@@ -31,8 +31,3 @@ enum Role {
 	ADMIN 
 	USER 
 }
-
-
-
-  
-psql -U postgres -d postgres_db
