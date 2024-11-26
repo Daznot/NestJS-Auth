@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from '@prisma/prisma.service';
 import { genSaltSync, hashSync } from 'bcrypt';
@@ -7,7 +7,11 @@ import { genSaltSync, hashSync } from 'bcrypt';
 export class UserService {
     constructor(private readonly prismaService: PrismaService) {}
 
-    save(user: Partial<User>) {
+    async save(user: Partial<User>) {
+        const use = await this.prismaService.user.findFirst({ where: { email: user.email } });
+        if (use) {
+            throw new BadRequestException(`Пользователь с email: ${user.email} - уже существует`);
+        }
         const hashedPassword = this.hashPassword(user.password);
         return this.prismaService.user.create({
             data: {
