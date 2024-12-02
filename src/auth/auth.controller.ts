@@ -1,12 +1,14 @@
 import {
     BadRequestException,
     Body,
+    ClassSerializerInterceptor,
     Controller,
     Get,
     HttpStatus,
     Post,
     Res,
     UnauthorizedException,
+    UseInterceptors,
 } from '@nestjs/common';
 import { LoginDTO, RegisterDTO } from './dto';
 import { AuthService } from './auth.service';
@@ -14,6 +16,7 @@ import { Tokens } from './interfaces';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { Cookie, Public, Useragent } from '@common/decorators';
+import { UserResponse } from '@user/responses';
 
 const REFRESH_TOKEN = 'refreshtoken';
 @Public()
@@ -24,6 +27,7 @@ export class AuthController {
         private readonly confugService: ConfigService,
     ) {}
 
+    @UseInterceptors(ClassSerializerInterceptor)
     @Post('register')
     async register(@Body() dto: RegisterDTO) {
         const user = await this.authService.register(dto);
@@ -32,6 +36,7 @@ export class AuthController {
                 `Неполучается зарегистрировать пользователя с данными: ${JSON.stringify(dto)}`,
             );
         }
+        return new UserResponse(user);
     }
 
     @Post('login')
@@ -46,18 +51,18 @@ export class AuthController {
     @Get('refresh-tokens')
     async refreshTokens(@Cookie(REFRESH_TOKEN) refreshToken: string, @Res() res: Response, @Useragent() agent: string) {
         if (!refreshToken) {
-            throw new UnauthorizedException();
+            throw new UnauthorizedException('2354657');
         }
         const tokens = await this.authService.refreshTokens(refreshToken, agent);
         if (!tokens) {
-            throw new UnauthorizedException();
+            throw new UnauthorizedException('eeeeee');
         }
         this.setRefreshTokenToCookies(tokens, res);
     }
 
     private setRefreshTokenToCookies(tokens: Tokens, res: Response) {
         if (!tokens) {
-            throw new UnauthorizedException();
+            throw new UnauthorizedException('222222');
         }
 
         res.cookie(REFRESH_TOKEN, tokens.refreshToken.token, {
