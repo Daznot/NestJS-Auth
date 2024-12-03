@@ -23,18 +23,19 @@ export class UserService {
         });
     }
 
-    findOne(idOrMail: string) {
-        return this.prismaService.user.findFirst({
+    async findOne(idOrMail: string) {
+        const user = await this.prismaService.user.findFirst({
             where: {
                 OR: [{ id: idOrMail }, { email: idOrMail }],
             },
         });
+        if (!user) {
+            throw new BadRequestException('Такого пользователя не существует');
+        }
+        return user;
     }
 
     delete(id: string, user: JwtPayload) {
-        console.log(id);
-        console.log(user);
-
         if (user.id !== id || !user.roles.includes(Role.ADMIN)) {
             throw new ForbiddenException('ты шо ебанулся');
         }
