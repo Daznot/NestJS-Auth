@@ -1,12 +1,16 @@
 import { JwtPayload } from '@auth/interfaces';
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { Role, User } from '@prisma/client';
 import { PrismaService } from '@prisma/prisma.service';
 import { genSaltSync, hashSync } from 'bcrypt';
 
 @Injectable()
 export class UserService {
-    constructor(private readonly prismaService: PrismaService) {}
+    constructor(
+        private readonly prismaService: PrismaService,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    ) {}
 
     async save(user: Partial<User>) {
         const use = await this.prismaService.user.findFirst({ where: { email: user.email } });
@@ -24,6 +28,10 @@ export class UserService {
     }
 
     async findOne(idOrMail: string) {
+        const cash = await this.cacheManager.get<User>(idOrMail);
+        if (!cash) {
+            await this.cacheManager.set(idOrMail);
+        }
         const user = await this.prismaService.user.findFirst({
             where: {
                 OR: [{ id: idOrMail }, { email: idOrMail }],
