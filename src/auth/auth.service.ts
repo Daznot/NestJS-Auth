@@ -97,4 +97,15 @@ export class AuthService {
     deleteRefreshToken(token: string) {
         return this.prismaService.token.delete({ where: { token } });
     }
+
+    async googleAuth(email: string, agent: string) {
+        const userExist = await this.userService.findOne(email);
+        if (userExist) {
+            return this.generateTokens(userExist, agent);
+        }
+        const user = this.userService.save({ email }).catch((err) => {
+            this.logger.error(err);
+            return null;
+        });
+    }
 }

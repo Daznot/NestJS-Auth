@@ -6,17 +6,23 @@ import {
     Get,
     HttpStatus,
     Post,
+    Query,
+    Req,
     Res,
     UnauthorizedException,
+    UseGuards,
     UseInterceptors,
 } from '@nestjs/common';
 import { LoginDTO, RegisterDTO } from './dto';
 import { AuthService } from './auth.service';
 import { Tokens } from './interfaces';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { Cookie, Public, Useragent } from '@common/decorators';
 import { UserResponse } from '@user/responses';
+import { GoogleGuard } from './guards/google.guard';
+import { HttpService } from '@nestjs/axios';
+import { map } from 'rxjs';
 
 const REFRESH_TOKEN = 'refreshtoken';
 @Public()
@@ -25,6 +31,7 @@ export class AuthController {
     constructor(
         private readonly authService: AuthService,
         private readonly confugService: ConfigService,
+        private readonly httpService: HttpService,
     ) {}
 
     @UseInterceptors(ClassSerializerInterceptor)
@@ -84,5 +91,23 @@ export class AuthController {
             path: '/',
         });
         res.status(HttpStatus.CREATED).json({ accessToken: tokens.accessToken });
+    }
+
+    @UseGuards(GoogleGuard)
+    @Get('google')
+    googleAuth() {}
+
+    @UseGuards(GoogleGuard)
+    @Get('google/callback')
+    googleAuthCallback(@Req() req: Request, @Res() res: Response) {
+        const token = req.user['accessToken'];
+        return res.redirect(`http://localhost:3000/api/auth/success?token=${token}`);
+    }
+
+    @Get('success')
+    success(@Query('token') token: string, @Useragent() agent: string) {
+        return this.httpService
+            .get(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}`)
+            .pipe(map(({ data }) => data));
     }
 }
