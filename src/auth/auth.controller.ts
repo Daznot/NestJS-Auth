@@ -22,7 +22,8 @@ import { Cookie, Public, Useragent } from '@common/decorators';
 import { UserResponse } from '@user/responses';
 import { GoogleGuard } from './guards/google.guard';
 import { HttpService } from '@nestjs/axios';
-import { map } from 'rxjs';
+import { map, mergeMap } from 'rxjs';
+import { handleTimeoutAndErrors } from '@common/helpers';
 
 const REFRESH_TOKEN = 'refreshtoken';
 @Public()
@@ -105,9 +106,11 @@ export class AuthController {
     }
 
     @Get('success')
-    success(@Query('token') token: string, @Useragent() agent: string) {
-        return this.httpService
-            .get(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}`)
-            .pipe(map(({ data }) => data));
+    success(@Query('token') token: string, @Useragent() agent: string, @Res() res: Response) {
+        return this.httpService.get(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}`).pipe(
+            mergeMap(({ data: { email } }) => this.authService.googleAuth(email, agent)),
+            map((data) => this.setRefreshTokenToCookies(data, res)),
+            handleTimeoutAndErrors(),
+        );
     }
 }

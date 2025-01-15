@@ -11,6 +11,7 @@ model User {
 	id String @id @default(uuid())
 	email String @unique
 	password String?
+	provider Provider?
 	createdAt DateTime @default(now()) @map("created_at")
 	updatedAt DateTime @updatedAt @map("updated_at")
 	Role Role[]
@@ -30,4 +31,9 @@ model Token {
 enum Role {
 	ADMIN 
 	USER 
+}
+
+enum Provider {
+	GOOGLE
+	YANDEX
 }

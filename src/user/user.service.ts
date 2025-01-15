@@ -17,11 +17,11 @@ export class UserService {
     ) {}
 
     async save(user: Partial<User>) {
+        const hashedPassword = user?.password ? this.hashPassword(user.password) : null;
         const use = await this.prismaService.user.findFirst({ where: { email: user.email } });
         if (use) {
             throw new BadRequestException(`Пользователь с email: ${user.email} - уже существует`);
         }
-        const hashedPassword = this.hashPassword(user.password);
         return this.prismaService.user.create({
             data: {
                 email: user.email,
