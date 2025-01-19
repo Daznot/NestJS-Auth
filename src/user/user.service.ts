@@ -18,22 +18,15 @@ export class UserService {
 
     async save(user: Partial<User>) {
         const hashedPassword = user?.password ? this.hashPassword(user.password) : null;
-        // const savedUser = await this.prismaService.user.create({
-        //     data: {
-        //         email: user.email,
-        //         password: hashedPassword,
-        //         Role: ['USER'],
-        //         provider: user?.provider,
-        //     },
-        // });
         const savedUser = await this.prismaService.user.upsert({
             where: {
                 email: user.email,
             },
             update: {
-                password: hashedPassword,
-                provider: user?.provider,
-                Role: user.Role,
+                password: hashedPassword ?? undefined,
+                provider: user?.provider ?? undefined,
+                Role: user?.Role ?? undefined,
+                isBlocked: user?.isBlocked ?? undefined,
             },
             create: {
                 email: user.email,
@@ -47,7 +40,7 @@ export class UserService {
         return savedUser;
     }
 
-    async findOne(idOrMail: string, isReset = false) {
+    async findOne(idOrMail: string, isReset = false): Promise<User> {
         if (isReset) {
             await this.cacheManager.del(idOrMail);
         }
