@@ -1,7 +1,7 @@
 import { JwtPayload } from '@auth/interfaces';
 import { convertToSecondUtil } from '@common/utils';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Role, User } from '@prisma/client';
 import { PrismaService } from '@prisma/prisma.service';
@@ -18,17 +18,33 @@ export class UserService {
 
     async save(user: Partial<User>) {
         const hashedPassword = user?.password ? this.hashPassword(user.password) : null;
-        const use = await this.prismaService.user.findFirst({ where: { email: user.email } });
-        if (use) {
-            throw new BadRequestException(`Пользователь с email: ${user.email} - уже существует`);
-        }
-        return this.prismaService.user.create({
-            data: {
+        // const savedUser = await this.prismaService.user.create({
+        //     data: {
+        //         email: user.email,
+        //         password: hashedPassword,
+        //         Role: ['USER'],
+        //         provider: user?.provider,
+        //     },
+        // });
+        const savedUser = await this.prismaService.user.upsert({
+            where: {
+                email: user.email,
+            },
+            update: {
+                password: hashedPassword,
+                provider: user?.provider,
+                Role: user.Role,
+            },
+            create: {
                 email: user.email,
                 password: hashedPassword,
+                provider: user?.provider,
                 Role: ['USER'],
             },
         });
+        await this.cacheManager.set(savedUser.id, savedUser);
+        await this.cacheManager.set(savedUser.email, savedUser);
+        return savedUser;
     }
 
     async findOne(idOrMail: string, isReset = false) {

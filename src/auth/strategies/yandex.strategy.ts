@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy } from 'passport-jwt';
+import { Strategy } from 'passport-yandex';
 
-Injectable();
+@Injectable()
 export class YandexStrategy extends PassportStrategy(Strategy, 'yandex') {
     constructor(private readonly configService: ConfigService) {
         super({
             clientID: configService.get('YANDEX_APP_ID'),
             clientSecret: configService.get('YANDEX_APP_SECRET'),
-            callbackURL: 'http://localehost:3000/api/auth/yandex/callback',
+            callbackURL: 'http://localhost:3000/api/auth/yandex/callback',
         });
     }
 
